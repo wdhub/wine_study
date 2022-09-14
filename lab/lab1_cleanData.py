@@ -3,7 +3,7 @@
 # separate emoji and text---->maybe emoji later
 # create dictionary from training set and test set
 # extract feature vectors for all the datasets and save them
-#------------no! The dictionary need to be the same!-------------------
+# ------------no! The dictionary need to be the same!-------------------
 import re
 import numpy as np
 import pandas as pd
@@ -52,29 +52,56 @@ def cleanText(comments):
 # print("before: "+comments[5])
 # print("after: "+clearedCom[5])
 
-def cleanData(fileName):
-    comments, labels = readCSV(fileName)
-    clearedCom = cleanText(comments)
-    # clean stop words and generate features------------no! The dictionary need to be the same!
-    temp = TfidfVectorizer(max_features=2500, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
-    features = temp.fit_transform(clearedCom).toarray()
-    return features
+# save data
+def saveData(saveName, data):
+    with open(saveName, "wb") as file:
+        pickle.dump(data, file, True)
 
+
+# extract dictionary model
+def getDict(clearedCom):
+    # if training set
+    tfidModel = TfidfVectorizer(max_features=2500, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
+    tfidModel = tfidModel.fit(clearedCom)
+
+    # dictionary=tfidModel.vocabulary_
+    # sortedDict=sorted(dictionary.items(), key=lambda item: item[1], reverse=True)
+    # sortedDict=sortedDict[0:2500-75]
+    return tfidModel
+
+#----------------------------------main---------------------------------------
 
 # # prepare stop words
 # nltk.download('stopwords')
 
+# prepare location
 cleanAllData = {}
-filePath=os.getcwd()# "I:/HCI_KTH/big data/project/codes/wine_study/lab"
-print("current location: "+filePath)
+allLabels = {}
+trainName = "train.csv"
+saveName = "data.pkl"
+filePath = os.getcwd()  # "I:/HCI_KTH/big data/project/codes/wine_study/lab"
+print("current location: " + filePath)
 
 # read and clean data
 for fileName in os.listdir(filePath):
-    if 'csv' in fileName:# only read datasets
-        cleanAllData[fileName] = cleanData(filePath+"/"+fileName)  # dictionary. type of dataset, cleaned feature
-        print(fileName+" finished")
+    if 'csv' in fileName:  # only read datasets
+        # dictionary. type of dataset, cleaned data
+        comments, labels = readCSV(filePath + "/" + fileName)
+        cleanAllData[fileName] = cleanText(comments)
+        allLabels[fileName] = labels
+        print(fileName + " cleaning finished")
 
-#save
-saveName="allCleanData.pkl"
-with open(saveName, "wb") as file:
-    pickle.dump(cleanAllData, file, True)
+
+# generate features
+
+# structure: {'train.csv':[feature sparse matrix, label vector],...}
+features_label = {}
+model = getDict(cleanAllData[trainName])# generate dictionary from training set
+
+# collect frequency according to dictionary->features
+for fileName, data in cleanAllData.items():
+    features_label[fileName] = [model.transform(data), allLabels[fileName]]
+    print(fileName + " extracting finished")
+
+# save result
+saveData(filePath + "/" + saveName, features_label)
