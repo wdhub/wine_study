@@ -9,7 +9,6 @@ import pickle
 filePath="I:/HCI_KTH/big data/project/codes/wine_study/lab"
 dataName=filePath+'/'+"data.pkl"
 trainName='train.csv'
-testName='test.csv'
 
 # read data
 with open(dataName, 'rb') as load_data:
