@@ -12,7 +12,7 @@ trainName='train.csv'
 
 # read data
 with open(dataName, 'rb') as load_data:
-    data = pickle.load(load_data)  # 加载数据
+    data = pickle.load(load_data)
 
 # process data for classifier
 for fileName, feature_label in data.items():

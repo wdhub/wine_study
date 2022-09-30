@@ -1,16 +1,17 @@
 # download data from vivino
 
-#Not solved:
+# Not solved:
 # maybe we shouldn't limit country. Or data is not enough and it take too much time to extract
 # (274 samples,184 second).
 # The labels are unbalanced: 274 samples, 39 negative
 
 import requests
 import pandas as pd
+import pickle
 
 # boundary of rating to identify positive/negative label
-labelPositive=4.3
-labelNegative=3.3
+labelPositive = 4.3
+labelNegative = 3.3
 
 headers = {
     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0",
@@ -21,26 +22,31 @@ def get_wine_data(wine_id, year, page):
     api_url = "https://www.vivino.com/api/wines/{id}/reviews?per_page=50&year={year}&page={page}"  # <-- increased the number of reviews to 9999
     data = requests.get(
         api_url.format(id=wine_id, year=year, page=page), headers=headers
-    ).json()# id=152262411, year=2013
+    ).json()  # id=152262411, year=2013
 
-    filteredReview=[]# without rating between 2.9-4.0
+    filteredReview = []  # without rating between 2.9-4.0
+    hasReview = False
+
     for review in data['reviews']:
-        # fetch user country
-        seo_name=review['user']['seo_name']
-        country=get_user_country(seo_name)
-        review['user']['country']=country
+        hasReview = True
+        # # fetch user country
+        # seo_name=review['user']['seo_name']
+        # country=get_user_country(seo_name)
+        # review['user']['country']=country
         # give label
-        review['label']=-1 # no label
-        if review['rating']>labelPositive:
-            review['label']=1
-        elif review['rating']<labelNegative:
+        review['label'] = -1  # no not process yet
+        if review['rating'] > labelPositive:
+            review['label'] = 1
+        if review['rating'] < labelNegative:
             review['label'] = 0
-        if review['label']!=-1:
+        if review['label'] != -1:
             filteredReview.append(review)
 
-    data['reviews']=filteredReview
+    data['reviews'] = filteredReview
+    data['hasReview'] = hasReview
 
     return data
+
 
 # fetch user country: 'united-states','sweden', ...
 def get_user_country(seo_name):
@@ -51,35 +57,36 @@ def get_user_country(seo_name):
 
     return data
 
+
 # fetch all wines under requirement
 # later: make price boundary as variable, number of pages
 def searchWines():
-    pageIndex=1
-    wineList=[]
+    pageIndex = 1
+    wineList = []
 
-    #wine results of the first 25*4 wines
-    while pageIndex<=4:
+    # wine results of the first 25*4 wines
+    while pageIndex <= 4:
         r = requests.get(
             "https://www.vivino.com/api/explore/explore",
             params={
                 "country_code": "SE",
                 "language": "en",
-                #"country_codes[]": ["pt", "es", "fr"],
+                # "country_codes[]": ["pt", "es", "fr"],
                 "currency_code": "SEK",
-                #"grape_filter": "varietal",
-                #"min_rating": "1",
+                # "grape_filter": "varietal",
+                # "min_rating": "1",
                 "order_by": "ratings_count",
                 "order": "desc",
                 "page": pageIndex,
-                #"price_range_max": "500",
+                # "price_range_max": "500",
                 "price_range_min": "250",
-                "wine_type_ids[]": ["1","2","3","4","7","24"],#,all wine types
+                "wine_type_ids[]": ["1", "2", "3", "4", "7", "24"],  # ,all wine types
             },
             headers=headers,
         )
-        wineList+=r.json()["explore_vintage"]["matches"]
-        print("explored wines in page "+str(pageIndex))
-        pageIndex+=1
+        wineList += r.json()["explore_vintage"]["matches"]
+        print("explored wines in page " + str(pageIndex))
+        pageIndex += 1
 
     results = [
         (
@@ -98,11 +105,18 @@ def searchWines():
     )
     return dataframe
 
-dataframe=searchWines()
+
+def saveData(saveName, data):
+    with open(saveName, "wb") as file:
+        pickle.dump(data, file, True)
+
+dataframe = searchWines()
 ratings = []
+finishedIndex=-1
+
 for _, row in dataframe.iterrows():
     page = 1
-    while True:# while true
+    while True:  # while true
         print(
             f'Getting info about wine {row["Wine ID"]}-{row["Year"]} Page {page}'
         )
@@ -110,27 +124,37 @@ for _, row in dataframe.iterrows():
         # otherwise there are not enough negative reviews
         d = get_wine_data(row["Wine ID"], row["Year"], page)
 
-        if not d["reviews"]:
+        if not d["hasReview"]:
             break
-
-
+        if page>300:
+            break
         for r in d["reviews"]:
             ratings.append(
                 [
                     row["Wine"],
                     row["price"],
-                    r['user']['country'],
+                    # r['user']['country'],
                     r['language'],
                     r["note"],
                     r["label"],
                 ]
             )
+        if page % 50 == 0: #save every 50 pages
+            saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl",ratings)
+            print("till page saved: " + str(page)+" number of ratings: "+str(ratings.__len__()))
 
         page += 1
 
-ratings = pd.DataFrame(
-    ratings, columns=["Wine", "price", "country", "language","Note", "label"]
-)
+    saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl", ratings)
+    finishedIndex+=1
 
-#df_out = ratings.merge(dataframe)
-ratings.to_csv("data.csv", index=False)
+    print("finished ID "+str(finishedIndex))
+
+
+ratings = pd.DataFrame(
+        ratings, columns=["Wine", "price", "country", "Note", "label"]
+        # ["Wine", "price", "country", "language","Note", "label"]
+    )
+
+    # df_out = ratings.merge(dataframe)
+ratings.to_csv("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.csv", index=False)
