@@ -1,0 +1,1 @@
+# the structure that allow learning from imbalance samples

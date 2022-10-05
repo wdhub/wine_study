@@ -7,7 +7,7 @@
 
 import requests
 import pandas as pd
-import pickle
+import utility
 
 # boundary of rating to identify positive/negative label
 labelPositive = 4.3
@@ -105,11 +105,6 @@ def searchWines():
     )
     return dataframe
 
-
-def saveData(saveName, data):
-    with open(saveName, "wb") as file:
-        pickle.dump(data, file, True)
-
 dataframe = searchWines()
 ratings = []
 finishedIndex=-1
@@ -140,12 +135,12 @@ for _, row in dataframe.iterrows():
                 ]
             )
         if page % 50 == 0: #save every 50 pages
-            saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl",ratings)
+            utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl",ratings)
             print("till page saved: " + str(page)+" number of ratings: "+str(ratings.__len__()))
 
         page += 1
 
-    saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl", ratings)
+    utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl", ratings)
     finishedIndex+=1
 
     print("finished ID "+str(finishedIndex))
