@@ -13,6 +13,12 @@ import utility
 labelPositive = 4.3
 labelNegative = 3.3
 
+#settings & file names
+startPage=5
+numWine=100
+maxPage=numWine/25+startPage# 25 wine per page, 4 pages
+saveName="data_cheap1" #expensive: "data"
+
 headers = {
     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0",
 }
@@ -61,11 +67,11 @@ def get_user_country(seo_name):
 # fetch all wines under requirement
 # later: make price boundary as variable, number of pages
 def searchWines():
-    pageIndex = 1
+    pageIndex = startPage
     wineList = []
 
     # wine results of the first 25*4 wines
-    while pageIndex <= 4:
+    while pageIndex < maxPage:
         r = requests.get(
             "https://www.vivino.com/api/explore/explore",
             params={
@@ -78,8 +84,8 @@ def searchWines():
                 "order_by": "ratings_count",
                 "order": "desc",
                 "page": pageIndex,
-                # "price_range_max": "500",
-                "price_range_min": "250",
+                "price_range_max": "150",
+                #"price_range_min": "250",
                 "wine_type_ids[]": ["1", "2", "3", "4", "7", "24"],  # ,all wine types
             },
             headers=headers,
@@ -135,12 +141,12 @@ for _, row in dataframe.iterrows():
                 ]
             )
         if page % 50 == 0: #save every 50 pages
-            utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl",ratings)
+            utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/"+saveName+".pkl",ratings)
             print("till page saved: " + str(page)+" number of ratings: "+str(ratings.__len__()))
 
         page += 1
 
-    utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.pkl", ratings)
+    utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/"+saveName+".pkl", ratings)
     finishedIndex+=1
 
     print("finished ID "+str(finishedIndex))
@@ -152,4 +158,4 @@ ratings = pd.DataFrame(
     )
 
     # df_out = ratings.merge(dataframe)
-ratings.to_csv("I:/HCI_KTH/big data/project/codes/wine_study/wine/data.csv", index=False)
+ratings.to_csv("I:/HCI_KTH/big data/project/codes/wine_study/wine/"+saveName+".csv", index=False)
