@@ -3,6 +3,7 @@
 # inbalance methods: weighted Bayesian, ensemble of Bayesian
 
 import utility
+import pickle
 import extracter
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
@@ -11,7 +12,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 
 #settings
-extractMethod="cor"# "freq": extract dictionary via frequent words, "cor": via correlated words
+extractMethod="freq"# "freq": extract dictionary via frequent words, "cor": via correlated words
 datasetName="expensive"
 
 # read data, sort
@@ -24,8 +25,15 @@ com_train,com_test, y_train, y_test = train_test_split(cleanedComments,labels,te
 
 
 # extract features from dictionary
+
 if extractMethod=='cor':
-    corDict = ["sweet", "good", "peach", "fruit", "friend"]  # example, to be replaced---------------
+    # read related words
+    dataName = "I:/HCI_KTH/big data/project/codes/wine_study/wine/price_words.pkl"
+    with open(dataName, 'rb') as load_data:
+        data = pickle.load(load_data)
+    corDict = data['mid_price']+data['high_price']
+    corDict=list(np.unique(corDict))
+
     X_train=extracter.corExtract(corDict,com_train)
     X_test = extracter.corExtract(corDict, com_test)
 else:
@@ -48,3 +56,16 @@ utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/NBmodel_"+ex
 
 #evaluate
 scores=accuracy_score(y_test.astype('int'), clf.predict(X_test))
+print("Method: "+extractMethod)
+print("Data: "+datasetName)
+print("scores: "+str(scores))
+
+# # on cheap data
+# dataName = "I:/HCI_KTH/big data/project/codes/wine_study/wine/NBmodel_"+extractMethod+"_"+datasetName+".pkl"
+# with open(dataName, 'rb') as load_data:
+#     model = pickle.load(load_data)
+#
+# scores=accuracy_score(y_test.astype('int'), model.predict(X_test))
+# print("Method: "+extractMethod)
+# print("Data: "+datasetName)
+# print("scores: "+str(scores))
