@@ -20,20 +20,18 @@ fileName="data_en_"+datasetName+".csv" # "I:/HCI_KTH/big data/project/codes/wine
 comments, labels=utility.readCSV(fileName, 3,4)
 cleanedComments=utility.cleanText(comments)
 
+# read related words
+dataName = "I:/HCI_KTH/big data/project/codes/wine_study/wine/price_words.pkl"
+with open(dataName, 'rb') as load_data:
+    data = pickle.load(load_data)
+corDict = data['mid_price'] + data['high_price']
+corDict = list(np.unique(corDict))
+
 # devide into train and test
 com_train,com_test, y_train, y_test = train_test_split(cleanedComments,labels,test_size=0.25)
 
-
 # extract features from dictionary
-
 if extractMethod=='cor':
-    # read related words
-    dataName = "I:/HCI_KTH/big data/project/codes/wine_study/wine/price_words.pkl"
-    with open(dataName, 'rb') as load_data:
-        data = pickle.load(load_data)
-    corDict = data['mid_price']+data['high_price']
-    corDict=list(np.unique(corDict))
-
     X_train=extracter.corExtract(corDict,com_train)
     X_test = extracter.corExtract(corDict, com_test)
 else:

@@ -62,3 +62,8 @@ lowWords=list(np.unique(lowWords)) # delete repeat
 
 #save results
 utility.saveData("I:/HCI_KTH/big data/project/codes/wine_study/wine/price_words.pkl", {'low_price':lowWords,'mid_price':midWords,'high_price':highWords})
+
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn3
+g = venn3(subsets=[lowWords,midWords,highWords],set_labels = ('low', 'median','high'),)
+plt.show()
